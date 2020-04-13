@@ -3,6 +3,8 @@ package dev.ujjwal.imagegallery.model
 import com.google.gson.annotations.SerializedName
 
 class FlickrPhoto {
+    var title: String? = null
+
     @field:SerializedName("url_s")
     var url: String? = null
 
