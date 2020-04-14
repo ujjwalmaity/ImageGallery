@@ -40,6 +40,7 @@ dependencies {
     implementation "androidx.recyclerview:recyclerview:$support_version"
     implementation 'androidx.cardview:cardview:1.0.0'
     implementation 'com.google.android.material:material:1.1.0'
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
 
     //Lifecycle
     def lifecycle_version = "2.2.0"

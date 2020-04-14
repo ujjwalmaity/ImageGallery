@@ -2,69 +2,53 @@ package dev.ujjwal.imagegallery.view
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
-import android.widget.LinearLayout
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
-import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import android.view.MenuItem
+import androidx.appcompat.app.ActionBarDrawerToggle
+import androidx.core.view.GravityCompat
+import com.google.android.material.navigation.NavigationView
 import dev.ujjwal.imagegallery.R
-import dev.ujjwal.imagegallery.model.FlickrPhoto
-import dev.ujjwal.imagegallery.model.FlickrPhotos
-import dev.ujjwal.imagegallery.model.FlickrResponse
-import dev.ujjwal.imagegallery.viewmodel.GalleyViewModel
 import kotlinx.android.synthetic.main.activity_main.*
 
-class MainActivity : AppCompatActivity() {
-
-    private lateinit var viewModel: GalleyViewModel
-    private lateinit var flickrResponse: MutableLiveData<FlickrResponse>
-    private lateinit var error: MutableLiveData<Boolean>
-    private val staggeredRecyclerViewAdapter = StaggeredRecyclerViewAdapter(arrayListOf())
-    private val NUM_COLUMNS = 2
-
-    companion object {
-        private val TAG = MainActivity::class.java.simpleName
-    }
+class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        setSupportActionBar(toolbar)
 
-        viewModel = ViewModelProviders.of(this).get(GalleyViewModel::class.java)
-        flickrResponse = viewModel.getFlickrResponse()
-        error = viewModel.error
+        navView.setNavigationItemSelectedListener(this)
 
-        observeViewModel()
+        val toggle = ActionBarDrawerToggle(this, drawerLayout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close)
+        drawerLayout.addDrawerListener(toggle)
+        toggle.syncState()
 
-        recycler_view.apply {
-            layoutManager = StaggeredGridLayoutManager(NUM_COLUMNS, LinearLayout.VERTICAL)
-            adapter = staggeredRecyclerViewAdapter
-        }
-
-        swipeRefreshLayout.setOnRefreshListener {
-            viewModel.refresh()
+        if (savedInstanceState == null) {
+            toolbar.title = "Image Gallery"
+            supportFragmentManager.beginTransaction().replace(R.id.fragmentContainerView, HomeFragment()).commit()
         }
     }
 
-    private fun observeViewModel() {
-        flickrResponse.observe(this, Observer { flickrResponse ->
-            flickrResponse?.let {
-                val flickrPhotos: FlickrPhotos = it.photos!!
-                val listFlickrPhotos: List<FlickrPhoto> = flickrPhotos.photo!!
-                staggeredRecyclerViewAdapter.updatePhoto(listFlickrPhotos)
-                swipeRefreshLayout.isRefreshing = false
-                for (i in listFlickrPhotos) {
-                    Log.i(TAG, "${i.url}")
-                }
+    override fun onNavigationItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.nav_home -> {
+                toolbar.title = "Image Gallery"
+                supportFragmentManager.beginTransaction().replace(R.id.fragmentContainerView, HomeFragment()).commit()
             }
-        })
+            R.id.nav_profile -> {
+                toolbar.title = "My Profile"
+                supportFragmentManager.beginTransaction().replace(R.id.fragmentContainerView, ProfileFragment()).commit()
+            }
+            else -> println("Give a proper input")
+        }
+        drawerLayout.closeDrawer(GravityCompat.START)
+        return true
+    }
 
-        error.observe(this, Observer {
-            it?.let {
-                if (it)
-                    swipeRefreshLayout.isRefreshing = false
-            }
-        })
+    override fun onBackPressed() {
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START)
+        } else {
+            super.onBackPressed()
+        }
     }
 }
