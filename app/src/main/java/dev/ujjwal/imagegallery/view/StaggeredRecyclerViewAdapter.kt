@@ -12,8 +12,9 @@ import kotlinx.android.synthetic.main.layout_grid_item.view.*
 class StaggeredRecyclerViewAdapter(var listFlickrPhoto: ArrayList<FlickrPhoto>) :
     RecyclerView.Adapter<StaggeredRecyclerViewAdapter.ViewHolder>() {
 
-    fun updatePhoto(newPhoto: List<FlickrPhoto>) {
-        listFlickrPhoto.clear()
+    fun updatePhoto(newPhoto: List<FlickrPhoto>, pageNo: Int) {
+        if (pageNo == 1)
+            listFlickrPhoto.clear()
         listFlickrPhoto.addAll(newPhoto)
         notifyDataSetChanged()
     }
