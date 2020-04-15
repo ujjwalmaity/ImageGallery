@@ -34,6 +34,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 toolbar.title = "Image Gallery"
                 supportFragmentManager.beginTransaction().replace(R.id.fragmentContainerView, HomeFragment()).commit()
             }
+            R.id.nav_search -> {
+                toolbar.title = "Search"
+                supportFragmentManager.beginTransaction().replace(R.id.fragmentContainerView, SearchFragment()).commit()
+            }
             R.id.nav_profile -> {
                 toolbar.title = "My Profile"
                 supportFragmentManager.beginTransaction().replace(R.id.fragmentContainerView, ProfileFragment()).commit()
