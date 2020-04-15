@@ -3,14 +3,24 @@ package dev.ujjwal.imagegallery.view
 import android.os.Bundle
 import android.util.Log
 import android.view.*
+import android.widget.LinearLayout
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModelProviders
+import androidx.recyclerview.widget.StaggeredGridLayoutManager
+import com.google.android.material.snackbar.Snackbar
 import dev.ujjwal.imagegallery.R
+import dev.ujjwal.imagegallery.model.FlickrPhoto
+import dev.ujjwal.imagegallery.model.FlickrPhotos
+import dev.ujjwal.imagegallery.model.FlickrResponse
+import dev.ujjwal.imagegallery.viewmodel.SearchViewModel
 import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
+import kotlinx.android.synthetic.main.fragment_search.*
 import java.util.concurrent.TimeUnit
 
 class SearchFragment : Fragment() {
@@ -20,6 +30,14 @@ class SearchFragment : Fragment() {
     private val disposables = CompositeDisposable()
     private var timeSinceLastRequest: Long = 0
 
+    private lateinit var viewModel: SearchViewModel
+    private lateinit var flickrResponse: MutableLiveData<FlickrResponse>
+    private lateinit var queryText: MutableLiveData<String>
+    private lateinit var error: MutableLiveData<Boolean>
+
+    private val searchRecyclerViewAdapter = SearchRecyclerViewAdapter(arrayListOf())
+    private val NUM_COLUMNS = 2
+
     companion object {
         private val TAG = SearchFragment::class.java.simpleName
     }
@@ -27,6 +45,22 @@ class SearchFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         setHasOptionsMenu(true)
         return inflater.inflate(R.layout.fragment_search, container, false)
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        viewModel = ViewModelProviders.of(this).get(SearchViewModel::class.java)
+        flickrResponse = viewModel.getFlickrResponse()
+        queryText = viewModel.queryText
+        error = viewModel.error
+
+        observeViewModel()
+
+        search_recycler_view.apply {
+            layoutManager = StaggeredGridLayoutManager(NUM_COLUMNS, LinearLayout.VERTICAL)
+            adapter = searchRecyclerViewAdapter
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -89,6 +123,45 @@ class SearchFragment : Fragment() {
     }
 
     private fun sendRequestToServer(query: String) {
+        queryText.postValue(query.trim())
+    }
+
+    private fun observeViewModel() {
+        flickrResponse.observe(viewLifecycleOwner, androidx.lifecycle.Observer { flickrResponse ->
+            flickrResponse?.let {
+                val flickrPhotos: FlickrPhotos = it.photos!!
+                val listFlickrPhotos: List<FlickrPhoto> = flickrPhotos.photo!!
+                searchRecyclerViewAdapter.updatePhoto(listFlickrPhotos)
+                for (i in listFlickrPhotos) {
+                    Log.i(TAG, "${i.url}")
+                }
+            }
+        })
+
+        viewModel.queryText.observe(viewLifecycleOwner, androidx.lifecycle.Observer {
+            it?.let {
+                viewModel.makeQuery(queryText.value!!)
+            }
+        })
+
+        error.observe(viewLifecycleOwner, androidx.lifecycle.Observer {
+            it?.let {
+                if (it) {
+                    Snackbar.make(frame_layout, "Network failed", Snackbar.LENGTH_INDEFINITE)
+                        .setAction("RETRY") { viewModel.makeQuery(queryText.value!!) }
+                        .show()
+                }
+            }
+        })
+
+        viewModel.isLoading.observe(viewLifecycleOwner, androidx.lifecycle.Observer {
+            it?.let {
+                if (it)
+                    search_progress_bar.visibility = View.VISIBLE
+                else
+                    search_progress_bar.visibility = View.GONE
+            }
+        })
     }
 
     override fun onDestroy() {

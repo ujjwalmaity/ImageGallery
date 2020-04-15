@@ -16,4 +16,13 @@ interface FlickrPhotoService {
         @Query("per_page") size: Int,
         @Query("api_key") key: String
     ): Call<FlickrResponse>
+
+//    api_key=6f102c62f41998d151e5a1b48713cf13
+//    text=cat
+
+    @GET("services/rest/?method=flickr.photos.search&format=json&nojsoncallback=1&extras=url_s")
+    fun getSearchResult(
+        @Query("text") query: String,
+        @Query("api_key") key: String
+    ): Call<FlickrResponse>
 }
